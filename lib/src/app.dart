@@ -5,8 +5,11 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Login App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'Docent',
+      theme: ThemeData(
+        fontFamily: 'NanumGothic',
+        primarySwatch: Colors.blue,
+      ),
       home: LoginPage(),
     );
   }

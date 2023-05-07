@@ -9,15 +9,19 @@ Future<dynamic> fetchDataFromApi(String url,
     response = await http.get(Uri.parse(url), headers: headers);
   } else if (httpMethod == 'POST') {
     response = await http.post(Uri.parse(url), headers: headers, body: json.encode(body));
+  } else if (httpMethod == 'DELETE') {
+    response = await http.delete(Uri.parse(url), headers: headers);
   } else {
     throw ArgumentError('Invalid httpMethod: $httpMethod');
   }
 
   if (response.statusCode == 200) {
-    final jsonResponse = json.decode(response.body);
+    // UTF-8 디코딩을 사용하여 응답 데이터 처리
+    String responseBody = utf8.decode(response.bodyBytes);
+    final jsonResponse = json.decode(responseBody);
     return jsonResponse['data'];
   } else {
-    print('Error: ${response.statusCode}');
+    print('Error: ${response.statusCode}, ${response.reasonPhrase}');
     return null;
   }
 }
