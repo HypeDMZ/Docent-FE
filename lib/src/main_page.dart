@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'common.dart';
+import 'diary_page.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -126,11 +127,16 @@ class _MainPageState extends State<MainPage> {
           Text(post['dream_name']),
           InkWell(
             onTap: () {
-              // 이미지 클릭시 이벤트 처리
-              print('Image clicked: ${post['id']}');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DiaryPage(diaryId: post['id'], accessToken: _accessToken),
+                ),
+              );
             },
             child: Image.network(post['image_url']),
           ),
+
           Row(
             children: [
               Icon(Icons.visibility),
