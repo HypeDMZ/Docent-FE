@@ -16,6 +16,22 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _autoLogin();
+  }
+
+  Future<void> _autoLogin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? accessToken = prefs.getString('access_token');
+    String? refreshToken = prefs.getString('refresh_token');
+
+    if (accessToken != null && refreshToken != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainPage(),
+        ),
+      );
+    }
   }
 
   @override
@@ -61,11 +77,12 @@ class _LoginPageState extends State<LoginPage> {
     Map<String, dynamic>? loginInfo = await _loginAndGetLoginInfo();
     if (loginInfo != null) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString('loginInfo', json.encode(loginInfo));
+      prefs.setString('access_token', loginInfo['access_token']);
+      prefs.setString('refresh_token', loginInfo['refresh_token']);
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MainPage(accessToken: loginInfo['access_token']),
+          builder: (context) => MainPage(),
         ),
       );
 
