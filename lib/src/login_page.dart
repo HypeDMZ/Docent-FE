@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
 
-    final url = 'https://bmongsmong.com/api/authkakao/moblie?data=${token.accessToken}';
+    final url = 'https://bmongsmong.com/api/auth/kakao/moblie?data=${token.accessToken}';
     final headers = {'accept': 'application/json'};
     dynamic data = await fetchDataFromApi(url, headers: headers);
     return data;
