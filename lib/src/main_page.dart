@@ -16,6 +16,8 @@ class _MainPageState extends State<MainPage> {
   int _page = 1;
   bool _hasMore = true;
   String? _accessToken;
+  double _screenHeight = 0.0;
+  bool _isLoading = false;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -28,6 +30,69 @@ class _MainPageState extends State<MainPage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _screenHeight = MediaQuery.of(context).size.height;
+    return Scaffold(
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => _fetchPosts(refresh: true),
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: <Widget>[
+              SliverAppBar(
+                snap: true,
+                floating: true,
+                pinned: false,
+                automaticallyImplyLeading: false,
+                expandedHeight: 4, // 원하는 AppBar 높이로 설정하세요.
+                flexibleSpace: InkWell(
+                  onTap: () {
+                    // 로고 클릭시 처리할 작업을 여기에 추가하세요.
+                    print('Logo clicked');
+                  },
+                    child: LayoutBuilder(
+                        builder: (BuildContext context, BoxConstraints constraints) {
+                          return Container(
+                            alignment: Alignment.centerLeft, // AppBar의 높이에 맞추기 위해
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 1, left: 6), // 원하는 만큼의 상단 패딩을 추가하세요.
+                              child: Image.asset(
+                                'lib/src/img/docent_logo.png', // 로컬 이미지 경로를 설정하세요.
+                                width: 120, // 이미지 너비를 설정하세요.
+                                height: constraints.maxHeight - 1, // AppBar 높이에 맞게 이미지 높이를 설정하세요.
+                                fit: BoxFit.contain, // 이미지를 주어진 너비와 높이에 맞게 조절하려면 BoxFit.contain을 사용하세요.
+                              ),
+                            ),
+                          );
+                        }
+                    )
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                    if (index == _posts.length) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    return _buildPostCard(_posts[index]);
+                  },
+                  childCount: _hasMore ? _posts.length + 1 : _posts.length,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: 0,
+        onTap: (int index) {
+          print(index);
+        },
+      ),
+    );
   }
 
   Future<void> _init() async {
@@ -47,13 +112,14 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  bool _isLoading = false;
-
-  Future<void> _fetchPosts() async {
-    if (!_hasMore || _isLoading) return;
-    if (_accessToken == null) return;
+  Future<void> _fetchPosts({bool refresh = false}) async {
+    if (_isLoading || _accessToken == null) return;
     _isLoading = true;
-    print('fetching page $_page');
+
+    if (refresh) {
+      _page = 1;
+      _hasMore = true;
+    }
 
     final url = 'https://bmongsmong.com/api/diary/list?page=$_page';
     final headers = {'Authorization': 'Bearer $_accessToken'};
@@ -62,6 +128,9 @@ class _MainPageState extends State<MainPage> {
 
     if (data != null) {
       setState(() {
+        if (refresh) {
+          _posts.clear();
+        }
         _posts.addAll(data);
         if (data.length < 5) {
           _hasMore = false;
@@ -75,54 +144,18 @@ class _MainPageState extends State<MainPage> {
 
   void _onScroll() {
     if (_scrollController.position.atEdge) {
-      if (_scrollController.position.pixels != 0) {
+      if (_scrollController.position.pixels != 0 && _hasMore) {
         print('Reached the bottom');
         _fetchPosts();
       }
     } else {
       // 현재 인덱스를 계산합니다.
       int currentIndex = (_scrollController.position.pixels / _scrollController.position.maxScrollExtent * _posts.length).floor();
-      if (_posts.length - currentIndex <= 2) {
+      if (_posts.length - currentIndex <= 2 && _hasMore) {
         _fetchPosts();
       }
     }
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverAppBar(
-            title: Text('Docent'),
-            snap: false,
-            floating: true,
-            pinned: false,
-            expandedHeight: 35.0,
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-                  (BuildContext context, int index) {
-                if (index == _posts.length) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                return _buildPostCard(_posts[index]);
-              },
-              childCount: _hasMore ? _posts.length + 1 : _posts.length,
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: 0,
-        onTap: (int index) {
-          print(index);
-        },
-      ),
-    );
-  }
-
 
   Future<void> _toggleLike(int postId, bool isLiked, Function callback) async {
     String url;

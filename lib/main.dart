@@ -9,19 +9,5 @@ void main() {
   KakaoSdk.init(
     nativeAppKey: KakaoKeys.nativeAppKey,
   );
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        fontFamily: 'NanumGothic',
-        primarySwatch: Colors.blue,
-      ),
-      home: App(),
-    );
-  }
+  runApp(App());
 }
