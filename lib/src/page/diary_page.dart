@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../feature/common.dart';
-import '../feature/like_api.dart';
+import '../feature/apiService.dart';
 
 class DiaryPage extends StatefulWidget {
   final int diaryId;
@@ -14,11 +14,7 @@ class DiaryPage extends StatefulWidget {
 
 class _DiaryPageState extends State<DiaryPage> {
   List<dynamic> _comments = [];
-  dynamic _diaryData = {
-    'is_public': false,
-    'is_liked': false,
-    'comments': [],
-  };
+  dynamic _diaryData;
 
   @override
   void initState() {
@@ -31,11 +27,19 @@ class _DiaryPageState extends State<DiaryPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Diary Page'),
+        iconTheme: IconThemeData(
+          color: Colors.black, // 뒤로가기 버튼의 색상을 변경합니다. 원하는 색상으로 설정하세요.
+        ),
       ),
       body: _diaryData == null
           ? Center(child: CircularProgressIndicator())
-          : _diaryData['is_public']
-          ? SingleChildScrollView(
+          : _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_diaryData['is_public']) {
+      return SingleChildScrollView(
         child: Column(
           children: [
             Image.network(_diaryData['image_url']),
@@ -128,14 +132,15 @@ class _DiaryPageState extends State<DiaryPage> {
             _buildCommentList(),
           ],
         ),
-      )
-          : Center(
+      );
+    } else {
+      return Center(
         child: Text(
           '비공개 게시물입니다.',
           style: TextStyle(fontSize: 18),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _fetchDiaryData() async {
@@ -149,7 +154,7 @@ class _DiaryPageState extends State<DiaryPage> {
     if (response != null) {
       setState(() {
         _diaryData = response;
-        _diaryData['is_liked'] = false; // 필드를 추가해주세요. 실제 '좋아요' 상태를 확인하는 API가 있다면 이를 사용하여 값을 설정하세요.
+        _diaryData['is_liked'] = _diaryData['is_liked']; // 서버에서 받은 is_liked 값을 사용합니다.
         _diaryData['comments'] = []; // 필드를 추가해주세요. 실제 댓글을 가져오는 API가 있다면 이를 사용하여 값을 설정하세요.
       });
     }
