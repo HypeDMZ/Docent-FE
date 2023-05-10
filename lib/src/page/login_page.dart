@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
@@ -17,21 +16,6 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _autoLogin();
-  }
-
-  Future<void> _autoLogin() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? accessToken = prefs.getString('access_token');
-    String? refreshToken = prefs.getString('refresh_token');
-
-    if (accessToken != null && refreshToken != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainPage(),
-        ),
-      );
-    }
   }
 
   @override
@@ -53,6 +37,21 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _autoLogin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? accessToken = prefs.getString('access_token');
+    String? refreshToken = prefs.getString('refresh_token');
+
+    if (accessToken != null && refreshToken != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainPage(),
+        ),
+      );
+    }
   }
 
   Widget _buildKakaoLoginButton() {
