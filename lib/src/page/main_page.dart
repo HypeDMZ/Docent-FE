@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../feature/common.dart';
 import 'diary_page.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../feature/like_api.dart';
+import '../feature/apiService.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -180,10 +180,13 @@ class _MainPageState extends State<MainPage> {
                 ),
               );
             },
-            child: Image.network(
-              post['image_url'],
+            child: FadeInImage(
+              placeholder: AssetImage('lib/src/img/loading_img.png'), // 로딩 중에 표시할 이미지를 지정하세요.
+              image: NetworkImage(post['image_url']),
               fit: BoxFit.cover,
               width: double.infinity,
+              fadeInDuration: Duration(milliseconds: 50), // 페이드 인 애니메이션 시간 설정
+              fadeOutDuration: Duration(milliseconds: 50), // 페이드 아웃 애니메이션 시간 설정
             ),
           ),
           Padding(
