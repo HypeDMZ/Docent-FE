@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'common.dart';
+import '../feature/common.dart';
 import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {

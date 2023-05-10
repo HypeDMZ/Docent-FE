@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:docent/src/login_page.dart';
+import 'package:docent/src/page/login_page.dart';
 
 class App extends StatelessWidget {
   final bool isDarkMode = false; // 다크 모드: true, 라이트 모드: false

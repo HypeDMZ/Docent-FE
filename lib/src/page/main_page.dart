@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'common.dart';
+import '../feature/common.dart';
 import 'diary_page.dart';
-import 'widgets/bottom_navigation_bar.dart';
+import '../widgets/bottom_navigation_bar.dart';
+import '../feature/like_api.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -157,25 +158,6 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  Future<void> _toggleLike(int postId, bool isLiked, Function callback) async {
-    String url;
-    String httpMethod;
-
-    if (isLiked) {
-      url = 'https://bmongsmong.com/api/diary/unlike?diary_id=$postId';
-      httpMethod = 'DELETE';
-    } else {
-      url = 'https://bmongsmong.com/api/diary/like?diary_id=$postId';
-      httpMethod = 'POST';
-    }
-
-    final headers = {'Authorization': 'Bearer $_accessToken'};
-
-    await fetchDataFromApi(url, headers: headers, httpMethod: httpMethod);
-
-    callback();
-  }
-
   Widget _buildPostCard(dynamic post) {
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -213,7 +195,7 @@ class _MainPageState extends State<MainPage> {
                   children: [
                     InkWell(
                       onTap: () async {
-                        await _toggleLike(post['id'], post['is_liked'], () {
+                        await toggleLike(_accessToken, post['id'] as int, post['is_liked'] as bool, () {
                           setState(() {
                             post['is_liked'] = !post['is_liked'];
                             post['like_count'] += post['is_liked'] ? 1 : -1;
