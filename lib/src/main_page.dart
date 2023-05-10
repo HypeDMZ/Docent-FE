@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'common.dart';
 import 'diary_page.dart';
+import 'widgets/bottom_navigation_bar.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -9,7 +10,6 @@ class MainPage extends StatefulWidget {
   @override
   _MainPageState createState() => _MainPageState();
 }
-
 
 class _MainPageState extends State<MainPage> {
   List<dynamic> _posts = [];
@@ -22,12 +22,10 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _init();
-    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -35,6 +33,7 @@ class _MainPageState extends State<MainPage> {
   Future<void> _init() async {
     await _fetchAccessToken();
     _fetchPosts();
+    _scrollController.addListener(_onScroll);
   }
 
   Future<void> _fetchAccessToken() async {
@@ -54,6 +53,7 @@ class _MainPageState extends State<MainPage> {
     if (!_hasMore || _isLoading) return;
     if (_accessToken == null) return;
     _isLoading = true;
+    print('fetching page $_page');
 
     final url = 'https://bmongsmong.com/api/diary/list?page=$_page';
     final headers = {'Authorization': 'Bearer $_accessToken'};
@@ -74,32 +74,55 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent ||
-        _scrollController.position.maxScrollExtent - _scrollController.position.pixels <=
-            2 * MediaQuery.of(context).size.height) {
-      _fetchPosts();
+    if (_scrollController.position.atEdge) {
+      if (_scrollController.position.pixels != 0) {
+        print('Reached the bottom');
+        _fetchPosts();
+      }
+    } else {
+      // 현재 인덱스를 계산합니다.
+      int currentIndex = (_scrollController.position.pixels / _scrollController.position.maxScrollExtent * _posts.length).floor();
+      if (_posts.length - currentIndex <= 2) {
+        _fetchPosts();
+      }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Main Page'),
-      ),
-      body: ListView.builder(
+      body: CustomScrollView(
         controller: _scrollController,
-        itemCount: _hasMore ? _posts.length + 1 : _posts.length,
-        itemBuilder: (BuildContext context, int index) {
-          if (index == _posts.length) {
-            return Center(child: CircularProgressIndicator());
-          }
-          return _buildPostCard(_posts[index]);
+        slivers: [
+          SliverAppBar(
+            title: Text('Docent'),
+            snap: false,
+            floating: true,
+            pinned: false,
+            expandedHeight: 35.0,
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+                  (BuildContext context, int index) {
+                if (index == _posts.length) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                return _buildPostCard(_posts[index]);
+              },
+              childCount: _hasMore ? _posts.length + 1 : _posts.length,
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: 0,
+        onTap: (int index) {
+          print(index);
         },
       ),
     );
   }
+
 
   Future<void> _toggleLike(int postId, bool isLiked, Function callback) async {
     String url;
@@ -122,56 +145,84 @@ class _MainPageState extends State<MainPage> {
 
   Widget _buildPostCard(dynamic post) {
     return Card(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(post['dream_name']),
           InkWell(
             onTap: () {
+              // 이미지 클릭시 이벤트 처리
+              // diary_page로 이동
+              print('Image clicked: ${post['id']}');
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DiaryPage(diaryId: post['id'], accessToken: _accessToken),
+                  builder: (context) => DiaryPage(
+                    diaryId: post['id'],
+                    accessToken: _accessToken,
+                  ),
                 ),
               );
             },
-            child: Image.network(post['image_url']),
+            child: Image.network(
+              post['image_url'],
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () async {
+                        await _toggleLike(post['id'], post['is_liked'], () {
+                          setState(() {
+                            post['is_liked'] = !post['is_liked'];
+                            post['like_count'] += post['is_liked'] ? 1 : -1;
+                          });
+                        });
+                      },
+                      child: Icon(
+                        Icons.favorite,
+                        color: post['is_liked'] ? Colors.red : Colors.grey,
+                      ),
+                    ),
+                    SizedBox(width: 4.0),
+                    Text(post['like_count'].toString()),
 
-          Row(
-            children: [
-              Icon(Icons.visibility),
-              Text(post['view_count'].toString()),
-            ],
-          ),
-          Row(
-            children: [
-              InkWell(
-                onTap: () async {
-                  await _toggleLike(post['id'], post['is_liked'], () {
-                    setState(() {
-                      post['is_liked'] = !post['is_liked'];
-                      post['like_count'] += post['is_liked'] ? 1 : -1;
-                    });
-                  });
-                },
-                child: Icon(
-                  Icons.favorite,
-                  color: post['is_liked'] ? Colors.red : Colors.grey,
+                    SizedBox(width: 8.0),
+                    InkWell(
+                      onTap: () {
+                        // 댓글 클릭시 이벤트 처리
+                        print('Comment clicked: ${post['id']}');
+                      },
+                      child: Icon(Icons.comment),
+                    ),
+                    SizedBox(width: 4.0),
+                    Text(post['comment_count'].toString()),
+                    SizedBox(width: 8.0),
+                    Icon(Icons.visibility),
+                    SizedBox(width: 4.0),
+                    Text(post['view_count'].toString()),
+                  ],
                 ),
-              ),
-              Text(post['like_count'].toString()),
-            ],
-          ),
-          Row(
-            children: [
-              Icon(Icons.comment),
-              Text(post['comment_count'].toString()),
-            ],
+                IconButton(
+                  icon: Icon(Icons.flag),
+                  onPressed: () {
+                    // 신고 버튼 클릭시 이벤트 처리
+                    print('Report clicked: ${post['id']}');
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
