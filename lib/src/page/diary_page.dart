@@ -37,110 +37,167 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  Widget _buildActionRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              // 좋아요 아이콘 및 텍스트
+              InkWell(
+                onTap: () async {
+                  await toggleLike(widget.accessToken, widget.diaryId, _diaryData['is_liked'], () {
+                    setState(() {
+                      _diaryData['is_liked'] = !_diaryData['is_liked'];
+                      _diaryData['like_count'] += _diaryData['is_liked'] ? 1 : -1;
+                    });
+                  });
+                },
+                child: Icon(
+                  Icons.favorite,
+                  color: _diaryData['is_liked'] ? Colors.red : Colors.grey,
+                ),
+              ),
+              SizedBox(width: 4),
+              Text(_diaryData['like_count'].toString()),
+
+              // 조회수 아이콘 및 텍스트
+              SizedBox(width: 16),
+              Icon(Icons.visibility),
+              SizedBox(width: 4),
+              Text(_diaryData['view_count'].toString()),
+
+              // 댓글 아이콘 및 텍스트
+              SizedBox(width: 16),
+              Icon(Icons.comment),
+              SizedBox(width: 4),
+              Text(_diaryData['comment_count'].toString()),
+            ],
+          ),
+          if (_diaryData['is_owner'])
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () async {
+                    await showEditDialog(context, _diaryData['dream_name'], _diaryData['dream'], (String newDreamName, String newDream) async {
+                      await modifyDiary(widget.accessToken, widget.diaryId, newDreamName, newDream, () {
+                        setState(() {
+                          _diaryData['dream_name'] = newDreamName;
+                          _diaryData['dream'] = newDream;
+                        });
+                        print('Diary modified successfully');
+                      });
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () async {
+                    final confirmDelete = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("삭제 확인"),
+                          content: const Text("게시글을 지우겠습니까?"),
+                          actions: <Widget>[
+                            TextButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                child: const Text("삭제")
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text("취소"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirmDelete) {
+                      await deleteDiary(widget.accessToken, widget.diaryId, () {
+                        Navigator.pop(context, true);
+                      });
+                      print('Delete clicked: ${widget.diaryId}');
+                    }
+                  },
+                ),
+                Switch(
+                  value: _diaryData['is_public'],
+                  onChanged: (bool value) async {
+                  await toggleDiaryVisibility(widget.accessToken, widget.diaryId, value, () {
+                  setState(() {
+                  _diaryData['is_public'] = value;
+                  });
+                });
+              },),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody() {
-    if (_diaryData['is_public']) {
-      return SingleChildScrollView(
-        child: Column(
-          children: [
-            Image.network(_diaryData['image_url']),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () async {
-                          await toggleLike(widget.accessToken, widget.diaryId, _diaryData['is_liked'], () {
-                            setState(() {
-                              _diaryData['is_liked'] = !_diaryData['is_liked'];
-                              _diaryData['like_count'] += _diaryData['is_liked'] ? 1 : -1;
-                            });
-                          });
-                        },
-                        child: Icon(
-                          Icons.favorite,
-                          color: _diaryData['is_liked'] ? Colors.red : Colors.grey,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Text(_diaryData['like_count'].toString()),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.visibility),
-                      SizedBox(width: 4),
-                      Text(_diaryData['view_count'].toString()),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.comment),
-                      SizedBox(width: 4),
-                      Text(_diaryData['comment_count'].toString()),
-                    ],
-                  ),
-                ],
-              ),
+    String dreamText = _diaryData['is_public'] || _diaryData['is_owner'] ? _diaryData['dream'] : '비공개 게시물입니다.';
+    String resolutionText = _diaryData['is_public'] || _diaryData['is_owner'] ? _diaryData['resolution'] : '비공개 게시물입니다.';
+    String checklistText = _diaryData['is_public'] || _diaryData['is_owner'] ? _diaryData['checklist'] : '비공개 게시물입니다.';
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Image.network(_diaryData['image_url']),
+          _buildActionRow(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '게시 날짜: ${_diaryData['create_date']}',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '꿈 내용:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  dreamText,
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '해몽:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  resolutionText,
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '체크리스트:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  checklistText,
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '게시 날짜: ${_diaryData['create_date']}',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '꿈 내용:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    _diaryData['dream'],
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '해몽:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    _diaryData['resolution'],
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    '체크리스트:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    _diaryData['checklist'],
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '댓글 목록:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            _buildCommentList(),
-          ],
-        ),
-      );
-    } else {
-      return Center(
-        child: Text(
-          '비공개 게시물입니다.',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
-    }
+          ),
+          SizedBox(height: 8),
+          Text(
+            '댓글 목록:',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          _buildCommentList(),
+        ],
+      ),
+    );
   }
 
   Future<void> _fetchDiaryData() async {
@@ -159,6 +216,52 @@ class _DiaryPageState extends State<DiaryPage> {
       });
     }
   }
+
+  Future<void> showEditDialog(BuildContext context, String dreamName, String dream, Function(String newDreamName, String newDream) onSave) async {
+    TextEditingController dreamNameController = TextEditingController(text: dreamName);
+    TextEditingController dreamController = TextEditingController(text: dream);
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('게시물 수정'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: dreamNameController,
+                  decoration: InputDecoration(labelText: '꿈 이름'),
+                ),
+                TextField(
+                  controller: dreamController,
+                  decoration: InputDecoration(labelText: '꿈 내용'),
+                  maxLines: 5,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('취소'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('저장'),
+              onPressed: () {
+                onSave(dreamNameController.text, dreamController.text);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   Widget _buildCommentList() {
     return _comments.isEmpty

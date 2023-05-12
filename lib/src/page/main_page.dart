@@ -170,7 +170,7 @@ class _MainPageState extends State<MainPage> {
               // 이미지 클릭시 이벤트 처리
               // diary_page로 이동
               print('Image clicked: ${post['id']}');
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => DiaryPage(
@@ -178,7 +178,12 @@ class _MainPageState extends State<MainPage> {
                     accessToken: _accessToken,
                   ),
                 ),
-              );
+              ).then((result) {
+                if (result != null && result) {
+                  // TODO: 다이어리 삭제 후에는 다시 리스트를 불러옵니다.
+                  // _fetchPosts(refresh: true);
+                }
+              });
             },
             child: FadeInImage(
               placeholder: AssetImage('lib/src/img/loading_img.png'), // 로딩 중에 표시할 이미지를 지정하세요.
