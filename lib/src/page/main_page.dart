@@ -167,10 +167,8 @@ class _MainPageState extends State<MainPage> {
         children: [
           InkWell(
             onTap: () {
-              // 이미지 클릭시 이벤트 처리
-              // diary_page로 이동
               print('Image clicked: ${post['id']}');
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => DiaryPage(
@@ -180,8 +178,7 @@ class _MainPageState extends State<MainPage> {
                 ),
               ).then((result) {
                 if (result != null && result) {
-                  // TODO: 다이어리 삭제 후에는 다시 리스트를 불러옵니다.
-                  // _fetchPosts(refresh: true);
+                  _fetchPosts(refresh: true);
                 }
               });
             },

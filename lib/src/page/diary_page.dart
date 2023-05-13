@@ -116,11 +116,11 @@ class _DiaryPageState extends State<DiaryPage> {
                       },
                     );
 
-                    if (confirmDelete) {
+                    if (confirmDelete != null && confirmDelete) {
                       await deleteDiary(widget.accessToken, widget.diaryId, () {
-                        Navigator.pop(context, true);
+                        print('Delete clicked: ${widget.diaryId}');
+                        Navigator.pop(context, true); // 삭제 성공 시 결과를 전달합니다.
                       });
-                      print('Delete clicked: ${widget.diaryId}');
                     }
                   },
                 ),
