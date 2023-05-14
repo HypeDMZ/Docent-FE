@@ -17,6 +17,7 @@ class _DiaryPageState extends State<DiaryPage> {
   dynamic _diaryData;
   int _pageNumber = 1;
   bool _isLoadingComment = false;
+  int _commentCount = 0;
 
   @override
   void initState() {
@@ -27,11 +28,13 @@ class _DiaryPageState extends State<DiaryPage> {
           _diaryData = response;
           _diaryData['is_liked'] = _diaryData['is_liked'];
           _diaryData['comments'] = [];
+          _commentCount = _diaryData['comment_count']; // 댓글 개수 초기화
         });
         _fetchAndLoadComments();
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,29 +73,48 @@ class _DiaryPageState extends State<DiaryPage> {
                 child: Icon(
                   Icons.favorite,
                   color: _diaryData['is_liked'] ? Colors.red : Colors.grey,
+                  size: 24,
                 ),
               ),
               SizedBox(width: 4),
-              Text(_diaryData['like_count'].toString()),
+              Text(
+                _diaryData['like_count'].toString(),
+                style: TextStyle(fontSize: 16),
+              ),
 
               // 조회수 아이콘 및 텍스트
               SizedBox(width: 16),
-              Icon(Icons.visibility),
+              Icon(
+                Icons.visibility,
+                size: 24,
+              ),
               SizedBox(width: 4),
-              Text(_diaryData['view_count'].toString()),
+              Text(
+                _diaryData['view_count'].toString(),
+                style: TextStyle(fontSize: 16),
+              ),
 
               // 댓글 아이콘 및 텍스트
               SizedBox(width: 16),
-              Icon(Icons.comment),
+              Icon(
+                Icons.comment,
+                size: 24,
+              ),
               SizedBox(width: 4),
-              Text(_diaryData['comment_count'].toString()),
+              Text(
+                _commentCount.toString(),
+                style: TextStyle(fontSize: 16),
+              ),
             ],
           ),
           if (_diaryData['is_owner'])
             Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit),
+                  icon: Icon(
+                    Icons.edit,
+                    size: 24,
+                  ),
                   onPressed: () async {
                     await showEditDialog(context, _diaryData['dream_name'], _diaryData['dream'], (String newDreamName, String newDream) async {
                       await modifyDiary(widget.accessToken, widget.diaryId, newDreamName, newDream, () {
@@ -106,7 +128,10 @@ class _DiaryPageState extends State<DiaryPage> {
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete),
+                  icon: Icon(
+                    Icons.delete,
+                    size: 24,
+                  ),
                   onPressed: () async {
                     final confirmDelete = await showDialog(
                       context: context,
@@ -168,7 +193,7 @@ class _DiaryPageState extends State<DiaryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '게시 날짜: ${_diaryData['create_date']}',
+                  '게시 날짜: ${_formatDateTime(_diaryData['create_date'])}',
                   style: TextStyle(fontSize: 16),
                 ),
                 SizedBox(height: 8),
@@ -345,6 +370,7 @@ class _DiaryPageState extends State<DiaryPage> {
                             setState(() {
                               _comments.removeAt(index);
                               _isLoadingComment = false;
+                              _commentCount -= 1;
                             });
                           },
                         );
@@ -386,17 +412,13 @@ class _DiaryPageState extends State<DiaryPage> {
           ),
           SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
               if (_commentController.text.isNotEmpty) {
-                setState(() {
-                  _isLoadingComment = true;
-                });
-                await createComment(
+                createComment(
                   widget.accessToken,
                   widget.diaryId,
                   _commentController.text,
                       (newComment) {
-                    // 댓글 작성 후 처리할 작업
                     setState(() {
                       _comments.add({
                         'id': newComment['id'],
@@ -405,7 +427,7 @@ class _DiaryPageState extends State<DiaryPage> {
                         'isMine': newComment['isMine'],
                         'create_date': _formatDateTime(newComment['create_date']),
                       });
-                      _isLoadingComment = false;
+                      _commentCount += 1;
                     });
                     _commentController.clear();
                   },
