@@ -117,6 +117,7 @@ Future<List<dynamic>> getHotPosts(String? accessToken, int page) async {
     'Authorization': 'Bearer $accessToken',
   };
 
+  print(accessToken);
   List<dynamic> response = await fetchDataFromApi(url, headers: headers);
   return response ?? [];
 }
