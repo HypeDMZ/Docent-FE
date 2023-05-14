@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../feature/common.dart';
 import '../feature/apiService.dart';
+import '../feature/token.dart';
 import 'diary_page.dart';
 
 
@@ -91,20 +92,9 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _init() async {
-    await _fetchAccessToken();
+    _accessToken = await fetchAccessToken();
     _fetchPosts();
     _scrollController.addListener(_onScroll);
-  }
-
-  Future<void> _fetchAccessToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? accessToken = prefs.getString('access_token');
-
-    if (accessToken != null) {
-      setState(() {
-        _accessToken = accessToken;
-      });
-    }
   }
 
   Future<void> _fetchPosts({bool refresh = false}) async {

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../feature/common.dart';
-import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -45,12 +44,7 @@ class _LoginPageState extends State<LoginPage> {
     String? refreshToken = prefs.getString('refresh_token');
 
     if (accessToken != null && refreshToken != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainPage(),
-        ),
-      );
+      Navigator.pushReplacementNamed(context, '/main');
     }
   }
 
