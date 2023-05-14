@@ -16,6 +16,7 @@ class _DiaryPageState extends State<DiaryPage> {
   List<dynamic> _comments = [];
   dynamic _diaryData;
   int _pageNumber = 1;
+  bool _isLoadingComment = false;
 
   @override
   void initState() {
@@ -328,9 +329,14 @@ class _DiaryPageState extends State<DiaryPage> {
                     ],
                   ),
                   if (comment['isMine'])
-                    IconButton(
+                    _isLoadingComment
+                        ? CircularProgressIndicator()
+                        : IconButton(
                       icon: Icon(Icons.delete),
                       onPressed: () async {
+                        setState(() {
+                          _isLoadingComment = true;
+                        });
                         await deleteComment(
                           widget.accessToken,
                           widget.diaryId,
@@ -338,6 +344,7 @@ class _DiaryPageState extends State<DiaryPage> {
                               () {
                             setState(() {
                               _comments.removeAt(index);
+                              _isLoadingComment = false;
                             });
                           },
                         );
@@ -379,22 +386,26 @@ class _DiaryPageState extends State<DiaryPage> {
           ),
           SizedBox(width: 8),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (_commentController.text.isNotEmpty) {
-                createComment(
+                setState(() {
+                  _isLoadingComment = true;
+                });
+                await createComment(
                   widget.accessToken,
                   widget.diaryId,
                   _commentController.text,
                       (newComment) {
                     // 댓글 작성 후 처리할 작업
-                    // 예: 댓글 목록 새로고침
                     setState(() {
                       _comments.add({
+                        'id': newComment['id'],
                         'userNickname': newComment['userNickname'],
                         'comment': newComment['comment'],
                         'isMine': newComment['isMine'],
                         'create_date': _formatDateTime(newComment['create_date']),
                       });
+                      _isLoadingComment = false;
                     });
                     _commentController.clear();
                   },
