@@ -78,13 +78,7 @@ class _LoginPageState extends State<LoginPage> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('access_token', loginInfo['access_token']);
       prefs.setString('refresh_token', loginInfo['refresh_token']);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainPage(),
-        ),
-      );
-
+      Navigator.pushReplacementNamed(context, '/main');
     } else {
       print('Failed to fetch login information');
     }

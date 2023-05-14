@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:docent/src/page/login_page.dart';
+import 'package:docent/src/page/main_page.dart';
+import 'package:docent/src/page/hot_page.dart';
+import 'package:docent/src/widgets/bottom_navigation_bar.dart';
 
 class App extends StatelessWidget {
   final bool isDarkMode = false; // 다크 모드: true, 라이트 모드: false
@@ -32,10 +35,50 @@ class App extends StatelessWidget {
                 ? Brightness.dark
                 : Brightness.light,
           ),
-          child: Material(child: child),
+          child: Material(child: child ?? const SizedBox.shrink()),
         );
       },
-      home: LoginPage(),
+      routes: {
+        '/': (context) => LoginPage(),
+        '/main': (context) => MainScreen(),
+      },
+      initialRoute: '/',
+    );
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  @override
+  _MainScreenState createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _currentIndex = 0;
+
+  List<Widget> _screens = [
+    // TODO: Replace with your actual pages
+    MainPage(),
+    MainPage(),// SearchPage(),
+    MainPage(),// CreatePage(),
+    HotPage(),
+    MainPage(),// MyPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: CustomBottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (int index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
     );
   }
 }

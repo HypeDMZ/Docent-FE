@@ -109,3 +109,14 @@ Future<void> deleteComment(String? accessToken, int diaryId, int commentId, Func
     callback();
   }
 }
+
+Future<List<dynamic>> getHotPosts(String? accessToken, int page) async {
+  final url = 'https://bmongsmong.com/api/search/hot?page=$page';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+  };
+
+  List<dynamic> response = await fetchDataFromApi(url, headers: headers);
+  return response ?? [];
+}

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../feature/common.dart';
-import 'diary_page.dart';
-import '../widgets/bottom_navigation_bar.dart';
 import '../feature/apiService.dart';
+import 'diary_page.dart';
+
 
 class MainPage extends StatefulWidget {
   MainPage({Key? key}) : super(key: key);
@@ -86,12 +86,6 @@ class _MainPageState extends State<MainPage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: 0,
-        onTap: (int index) {
-          print(index);
-        },
       ),
     );
   }
