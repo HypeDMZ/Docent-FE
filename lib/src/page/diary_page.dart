@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../feature/common.dart';
 import '../feature/apiService.dart';
+import 'package:intl/intl.dart';
 
 class DiaryPage extends StatefulWidget {
   final int diaryId;
@@ -15,11 +15,21 @@ class DiaryPage extends StatefulWidget {
 class _DiaryPageState extends State<DiaryPage> {
   List<dynamic> _comments = [];
   dynamic _diaryData;
+  int _pageNumber = 1;
 
   @override
   void initState() {
     super.initState();
-    _fetchDiaryData();
+    fetchDiaryData(widget.accessToken, widget.diaryId, (response) {
+      if (response != null) {
+        setState(() {
+          _diaryData = response;
+          _diaryData['is_liked'] = _diaryData['is_liked'];
+          _diaryData['comments'] = [];
+        });
+        _fetchAndLoadComments();
+      }
+    });
   }
 
   @override
@@ -28,8 +38,9 @@ class _DiaryPageState extends State<DiaryPage> {
       appBar: AppBar(
         title: Text('Diary Page'),
         iconTheme: IconThemeData(
-          color: Colors.black, // 뒤로가기 버튼의 색상을 변경합니다. 원하는 색상으로 설정하세요.
+          color: Colors.black,
         ),
+        backgroundColor: Colors.white, // 앱 바 배경색 변경
       ),
       body: _diaryData == null
           ? Center(child: CircularProgressIndicator())
@@ -195,26 +206,10 @@ class _DiaryPageState extends State<DiaryPage> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           _buildCommentList(),
+          _buildCommentInput(),
         ],
       ),
     );
-  }
-
-  Future<void> _fetchDiaryData() async {
-    final url = 'https://bmongsmong.com/api/diary/read?diary_id=${widget.diaryId}';
-    final headers = {
-      'accept': 'application/json',
-      'Authorization': 'Bearer ${widget.accessToken}'
-    };
-
-    dynamic response = await fetchDataFromApi(url, headers: headers);
-    if (response != null) {
-      setState(() {
-        _diaryData = response;
-        _diaryData['is_liked'] = _diaryData['is_liked']; // 서버에서 받은 is_liked 값을 사용합니다.
-        _diaryData['comments'] = []; // 필드를 추가해주세요. 실제 댓글을 가져오는 API가 있다면 이를 사용하여 값을 설정하세요.
-      });
-    }
   }
 
   Future<void> showEditDialog(BuildContext context, String dreamName, String dream, Function(String newDreamName, String newDream) onSave) async {
@@ -262,6 +257,30 @@ class _DiaryPageState extends State<DiaryPage> {
     );
   }
 
+  Future<void> _fetchAndLoadComments() async {
+    List<dynamic> newComments = await fetchCommentList(widget.accessToken, widget.diaryId, _pageNumber);
+    setState(() {
+      _comments.addAll(newComments.where((comment) => comment != null).toList());
+      _pageNumber += 1;
+    });
+  }
+
+  String _formatDateTime(String dateString) {
+    try {
+      String year = dateString.substring(0, 4);
+      String month = dateString.substring(4, 6);
+      String day = dateString.substring(6, 8);
+      String hour = dateString.substring(8, 10);
+      String minute = dateString.substring(10, 12);
+      String second = dateString.substring(12, 14);
+
+      DateTime parsedDateTime = DateTime.parse('$year-$month-$day $hour:$minute:$second');
+      DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
+      return formatter.format(parsedDateTime);
+    } catch (e) {
+      return dateString;
+    }
+  }
 
   Widget _buildCommentList() {
     return _comments.isEmpty
@@ -277,12 +296,115 @@ class _DiaryPageState extends State<DiaryPage> {
       itemCount: _comments.length,
       itemBuilder: (BuildContext context, int index) {
         final comment = _comments[index];
-        return ListTile(
-          leading: Icon(Icons.account_circle),
-          title: Text(comment['author']),
-          subtitle: Text(comment['content']),
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 8.0),
+          padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.account_circle, size: 32.0),
+                      SizedBox(width: 8),
+                      Text(
+                        comment['userNickname'],
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  if (comment['isMine'])
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () async {
+                        await deleteComment(
+                          widget.accessToken,
+                          widget.diaryId,
+                          comment['id'],
+                              () {
+                            setState(() {
+                              _comments.removeAt(index);
+                            });
+                          },
+                        );
+                      },
+                    ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Text(
+                comment['comment'],
+                style: TextStyle(fontSize: 16),
+              ),
+              Text(
+                '${_formatDateTime(comment['create_date'])}',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildCommentInput() {
+    TextEditingController _commentController = TextEditingController();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _commentController,
+              decoration: InputDecoration(
+                labelText: '댓글 작성',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () {
+              if (_commentController.text.isNotEmpty) {
+                createComment(
+                  widget.accessToken,
+                  widget.diaryId,
+                  _commentController.text,
+                      (newComment) {
+                    // 댓글 작성 후 처리할 작업
+                    // 예: 댓글 목록 새로고침
+                    setState(() {
+                      _comments.add({
+                        'userNickname': newComment['userNickname'],
+                        'comment': newComment['comment'],
+                        'isMine': newComment['isMine'],
+                        'create_date': _formatDateTime(newComment['create_date']),
+                      });
+                    });
+                    _commentController.clear();
+                  },
+                );
+              }
+            },
+            child: Text('작성'),
+          ),
+        ],
+      ),
     );
   }
 }
