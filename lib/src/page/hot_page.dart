@@ -84,7 +84,10 @@ class _HotPageState extends State<HotPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hot Posts'),
+        title: Text(
+            '인기 게시물',
+            style: TextStyle(color: Colors.black),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -93,7 +96,6 @@ class _HotPageState extends State<HotPage> {
           itemCount: _hotPosts.length,
           itemBuilder: (context, index) {
             final hotPost = _hotPosts[index];
-
             return Card(
               margin: EdgeInsets.all(8.0),
               child: ListTile(
