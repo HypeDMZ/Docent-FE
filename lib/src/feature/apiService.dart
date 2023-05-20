@@ -1,3 +1,6 @@
+import 'dart:convert';
+import '../dto/createRequest.dart';
+import '../page/create_page.dart';
 import 'common.dart';
 
 Future<void> toggleLike(String? accessToken, int postId, bool isLiked, Function callback) async {
@@ -119,4 +122,56 @@ Future<List<dynamic>> getHotPosts(String? accessToken, int page) async {
 
   List<dynamic> response = await fetchDataFromApi(url, headers: headers);
   return response ?? [];
+}
+
+Future<Map<String, dynamic>> generateDream(String? accessToken, String text) async {
+  final url = 'https://bmongsmong.com/api/generate/dream';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+    'Content-Type': 'application/json',
+  };
+  final body = jsonEncode({'text': text});
+
+  Map<String, dynamic> response = await fetchDataFromApi(url, headers: headers, body: body, httpMethod: 'POST');
+  return response ?? {};
+}
+
+Future<Map<String, dynamic>> generateAdditionalImage(String? accessToken, int textId) async {
+  final url = 'https://bmongsmong.com/api/generate/image';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+    'Content-Type': 'application/json',
+  };
+  final body = jsonEncode({'textId': textId});
+
+  Map<String, dynamic> response = await fetchDataFromApi(url, headers: headers, body: body, httpMethod: 'POST');
+  return response ?? {};
+}
+
+Future<Map<String, dynamic>> generateResolution(String? accessToken, String text) async {
+  final url = 'https://bmongsmong.com/api/generate/resolution';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+    'Content-Type': 'application/json',
+  };
+  final body = jsonEncode({'text': text});
+
+  Map<String, dynamic> response = await fetchDataFromApi(url, headers: headers, body: body, httpMethod: 'POST');
+  return response ?? {};
+}
+
+Future<Map<String, dynamic>> createDiary(String? accessToken, Create create) async {
+  final url = 'https://bmongsmong.com/api/diary/create';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+    'Content-Type': 'application/json',
+  };
+  final body = jsonEncode(create.toJson());  // Assuming Create class has a toJson method for serialization.
+
+  Map<String, dynamic> response = await fetchDataFromApi(url, headers: headers, body: body, httpMethod: 'POST');
+  return response ?? {};
 }

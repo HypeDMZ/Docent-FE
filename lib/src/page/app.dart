@@ -5,6 +5,8 @@ import 'package:docent/src/page/main_page.dart';
 import 'package:docent/src/page/hot_page.dart';
 import 'package:docent/src/widgets/bottom_navigation_bar.dart';
 
+import 'create_page.dart';
+
 class App extends StatelessWidget {
   final bool isDarkMode = false; // 다크 모드: true, 라이트 모드: false
 
@@ -59,7 +61,7 @@ class _MainScreenState extends State<MainScreen> {
     // TODO: Replace with your actual pages
     MainPage(),
     MainPage(),// SearchPage(),
-    MainPage(),// CreatePage(),
+    CreatePage(),
     HotPage(),
     MainPage(),// MyPage(),
   ];
