@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../dto/createRequest.dart';
 import '../feature/apiService.dart';
 import '../feature/token.dart';
+import 'app.dart';
 
 class CreatePage extends StatefulWidget {
   CreatePage({Key? key}) : super(key: key);
@@ -15,12 +16,20 @@ class _CreateDreamPageState extends State<CreatePage> {
   String? _accessToken;
   String _dreamText = '';
   stt.SpeechToText _speech = stt.SpeechToText();
-  List<String> _images = [];
+  List<String> _imageUrls = [];
   bool _isListening = false;
-  bool _isDreamCreated = false; // Indicating if a dream is created
+  bool _isDreamCreated = false;
+  int _dreamId = 0;
   String _dreamName = '';
   String _dream = '';
   String _imageUrl = '';
+  String _resolution = '';
+  bool _isLoading = false;
+  bool _isGeneratingDream = false; // New state
+  bool _isLoadingAdditionalImages = false; // New state
+  bool _canGoBack = false;
+  bool _isPublic = true;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -44,10 +53,25 @@ class _CreateDreamPageState extends State<CreatePage> {
       });
       _speech.listen(onResult: (val) {
         setState(() {
-          _dreamText = val.recognizedWords;
+          _dreamText = _dreamText + ' ' + val.recognizedWords;
         });
       });
     }
+  }
+
+  void _resetState() {
+    setState(() {
+      _dreamText = '';
+      _isListening = false;
+      _isDreamCreated = false;
+      _dreamName = '';
+      _dream = '';
+      _imageUrl = '';
+      _resolution = '';
+      _isLoading = false;
+      _isGeneratingDream = false; // Reset
+      _isLoadingAdditionalImages = false; // Reset
+    });
   }
 
   void _stopListening() {
@@ -58,84 +82,183 @@ class _CreateDreamPageState extends State<CreatePage> {
   }
 
   Future<void> _generateDream() async {
-    Map<String, dynamic> dreamResponse = await generateDream(_accessToken, _dreamText);
+    setState(() {
+      _isGeneratingDream = true; // Set state before making request
+    });
+
+    Future<Map<String, dynamic>> dreamFuture = generateDream(_accessToken, _dreamText);
+    Future<Map<String, dynamic>> resolutionFuture = generateResolution(_accessToken, _dreamText);
+
+    List<dynamic> responses = await Future.wait([dreamFuture, resolutionFuture]);
+
     setState(() {
       _isDreamCreated = true;
-      _dreamName = dreamResponse['dream_name'];
-      _dream = dreamResponse['dream'];
-      _imageUrl = dreamResponse['image_url'];  // Assuming the dreamResponse contains an image URL.
+      _dreamId = responses[0]['id'];
+      _dreamName = responses[0]['dream_name'];
+      _dream = responses[0]['dream'];
+      _imageUrls.add(responses[0]['image_url']);
+      _resolution = responses[1]['dream_resolution'];
+      _canGoBack = true;
+      _isGeneratingDream = false; // Reset state after response is received
+    });
+  }
+
+  Future<void> _generateAdditionalImages() async {
+    setState(() {
+      _isLoadingAdditionalImages = true; // Set state before making request
+    });
+
+    // Call the API and get the response
+    Map<String, dynamic> imageResponse = await generateAdditionalImage(_accessToken, _dreamId);
+
+    // Update state to include the new image
+    if (imageResponse['image_url'] != null) {
+      setState(() {
+        _imageUrls.add(imageResponse['image_url']);
+      });
+    }
+
+    setState(() {
+      _isLoadingAdditionalImages = false; // Reset state after response is received
     });
   }
 
   Future<void> _createDiary() async {
-    // Assuming you've got a generateResolution functions.
-    Map<String, dynamic> resolutionResponse = await generateResolution(_accessToken, _dreamText);
-
-    String resolution = resolutionResponse['resolution'];
-    String checklist = '';  // TODO: Update this with actual checklist data.
-    bool isPublic = true;  // TODO: Update this based on user choice.
+    String checklist = '';
+    bool isPublic = true;
+    _imageUrl = _imageUrls[_currentIndex];
 
     Create create = Create(
       dreamName: _dreamName,
       dream: _dream,
       imageUrl: _imageUrl,
-      resolution: resolution,
+      resolution: _resolution,
       checklist: checklist,
       isPublic: isPublic,
     );
 
-    // Map<String, dynamic> diaryResponse = await createDiary(_accessToken, create);
+    Map<String, dynamic> diaryResponse = await createDiary(_accessToken, create);
+
+    if (diaryResponse['id'] != null) {
+      // Navigate to the diary page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 0)),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Dream'),
+        title: Text('꿈 그리기', style: TextStyle(color: Colors.black)),
+        leading: _canGoBack
+            ? IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            _resetState();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => MainScreen(initialIndex: 2)),
+            );
+          },
+        )
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Column(
+        child: ListView(
+          padding: EdgeInsets.only(top: 50.0), // 상단에 패딩 추가
           children: <Widget>[
-            TextField(
-              maxLines: 10,
-              onChanged: (value) {
-                setState(() {
-                  _dreamText = value;
-                });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Dream',
-                hintText: 'Write about your dream...',
+            if (_isGeneratingDream || _isLoadingAdditionalImages) ...[
+              Center(child: CircularProgressIndicator()),
+            ]
+            else if (_isDreamCreated) ...[
+              Text('$_dreamName', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Container(
+                height: 200,
+                child: PageView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _imageUrls.length,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(9.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9.0),
+                        child: AspectRatio(
+                          aspectRatio: 1.0, // For 1:1 aspect ratio
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width, // Adjust the value as needed
+                              maxHeight: MediaQuery.of(context).size.width, // Adjust the value as needed
+                            ),
+                            child: Image.network(_imageUrls[index], fit: BoxFit.contain),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            IconButton(
-              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
-              onPressed: _isListening ? _stopListening : _startListening,
-            ),
-            IconButton(
-              icon: Icon(Icons.image),
-              onPressed: () async {
-                await generateAdditionalImage(_accessToken, 1);
-              },
-            ),
-            ElevatedButton(
-              onPressed: _isDreamCreated ? _createDiary : null,
-              child: Text('Create Diary'),
-            ),
-            ElevatedButton(
-              onPressed: _generateDream,
-              child: Text('Create Dream'),
-            ),
-            Wrap(
-              children: _images.map((url) => Image.network(url)).toList(),
-            ),
-            // New lines of code to show dream results
-            if (_isDreamCreated) ...[
-              Text('Dream Name: $_dreamName'),
-              Text('Dream: $_dream'),
-              Text('Image URL: $_imageUrl'),
+              Text('Image: ${_currentIndex + 1} / ${_imageUrls.length}', textAlign: TextAlign.center),
+              ElevatedButton(
+                onPressed: _imageUrls.length >= 3 ? null : _generateAdditionalImages,
+                child: Text('추가 이미지 생성'),
+              ),
+              SizedBox(height: 10),
+              Text('꿈 내용: $_dream', style: TextStyle(fontSize: 18)),
+              SizedBox(height: 10),
+              Text('해몽: $_resolution', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 10),
+              SwitchListTile(
+                title: Text("공개"),
+                value: _isPublic,
+                onChanged: (bool value) {
+                  setState(() {
+                    _isPublic = value;
+                  });
+                },
+              ),
+              ElevatedButton(
+                onPressed: _createDiary,
+                child: Text('저장하기'),
+              ),
+            ],
+            if (!_isDreamCreated) ...[
+              TextField(
+                maxLines: 10,
+                onChanged: (value) {
+                  setState(() {
+                    _dreamText = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: '꿈 입력',
+                  hintText: '꿈을 말하거나 입력해주세요.',
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: Icon(_isListening ? Icons.mic : Icons.mic_none, size: 50),
+                    onPressed: _isListening ? _stopListening : _startListening,
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _dreamText.isEmpty ? null : _generateDream,
+                child: Text('꿈 생성하기'),
+              ),
             ],
           ],
         ),

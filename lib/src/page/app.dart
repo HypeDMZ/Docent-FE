@@ -43,6 +43,7 @@ class App extends StatelessWidget {
       routes: {
         '/': (context) => LoginPage(),
         '/main': (context) => MainScreen(),
+        '/create': (context) => CreatePage(),
       },
       initialRoute: '/',
     );
@@ -50,21 +51,30 @@ class App extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
+  final int initialIndex;
+
+  MainScreen({this.initialIndex = 0});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   List<Widget> _screens = [
-    // TODO: Replace with your actual pages
     MainPage(),
     MainPage(),// SearchPage(),
     CreatePage(),
     HotPage(),
     MainPage(),// MyPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
