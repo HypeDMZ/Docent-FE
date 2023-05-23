@@ -215,14 +215,14 @@ class _DiaryPageState extends State<DiaryPage> {
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  '체크리스트:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  checklistText,
-                  style: TextStyle(fontSize: 18),
-                ),
+                // Text(
+                //   '체크리스트:',
+                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                // ),
+                // Text(
+                //   checklistText,
+                //   style: TextStyle(fontSize: 18),
+                // ),
               ],
             ),
           ),
