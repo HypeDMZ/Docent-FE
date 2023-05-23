@@ -1,3 +1,4 @@
+import 'package:docent/src/page/search_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:docent/src/page/login_page.dart';
@@ -65,9 +66,9 @@ class _MainScreenState extends State<MainScreen> {
 
   List<Widget> _screens = [
     MainPage(),
-    MainPage(),// SearchPage(),
+    SearchPage(),
     CreatePage(),
-    HotPage(),
+    MyPage(), // HotPage(),
     MyPage(),
   ];
 
