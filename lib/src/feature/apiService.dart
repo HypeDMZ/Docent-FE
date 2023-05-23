@@ -175,3 +175,14 @@ Future<Map<String, dynamic>> createDiary(String? accessToken, Create create) asy
   Map<String, dynamic> response = await fetchDataFromApi(url, headers: headers, body: body, httpMethod: 'POST');
   return response ?? {};
 }
+
+Future<List<dynamic>> fetchDiaries(String? accessToken, int page) async {
+  final url = 'https://bmongsmong.com/api/diary/list/mydiary/$page';
+  final headers = {
+    'accept': 'application/json',
+    'Authorization': 'Bearer $accessToken',
+  };
+
+  var response = await fetchDataFromApi(url, headers: headers, httpMethod: 'GET');
+  return response ?? [];
+}
