@@ -8,7 +8,7 @@ Future<dynamic> fetchDataFromApi(String url,
   if (httpMethod == 'GET') {
     response = await http.get(Uri.parse(url), headers: headers);
   } else if (httpMethod == 'POST') {
-    response = await http.post(Uri.parse(url), headers: headers, body: body);
+    response = await http.post(Uri.parse(url), headers: headers, body: json.encode(body));
   } else if (httpMethod == 'DELETE') {
     response = await http.delete(Uri.parse(url), headers: headers);
   } else {
