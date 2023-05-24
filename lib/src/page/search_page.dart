@@ -36,14 +36,14 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> fetchPosts({bool refresh = false}) async {
+    if (refresh) {
+      searchResults.clear();
+      page = 1;
+      _hasMore = true;
+    }
+
     if (!_isFetching && _hasMore) {
       _isFetching = true;
-
-      if (refresh) {
-        searchResults.clear();
-        page = 1;
-        _hasMore = true;
-      }
 
       List<dynamic> newPosts = await getHotPosts(accessToken, page);
 
@@ -147,18 +147,30 @@ class _SearchPageState extends State<SearchPage> {
                 ),
                 delegate: SliverChildBuilderDelegate(
                       (BuildContext context, int index) {
-                    return Container(
-                      color: Colors.white,
-                      margin: EdgeInsets.all(1),
-                      child: GestureDetector(
-                        onTap: () {
-                          print('Image clicked: ${searchResults[index]['id']}');
-                        },
-                        child: Image.network(searchResults[index]['image_url']),
-                      ),
-                    );
+                    if (index == searchResults.length && _hasMore) {
+                      // Return loading indicator in the bottom center
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    } else if (index < searchResults.length) {
+                      return Container(
+                        color: Colors.white,
+                        margin: EdgeInsets.all(1),
+                        child: GestureDetector(
+                          onTap: () {
+                            print('Image clicked: ${searchResults[index]['id']}');
+                          },
+                          child: Image.network(searchResults[index]['image_url']),
+                        ),
+                      );
+                    } else {
+                      // If there is no more data, return an empty container
+                      return Container();
+                    }
                   },
-                  childCount: searchResults.length,
+                  // Increase childCount by 1 if there might be more posts
+                  childCount: searchResults.length + (_hasMore ? 1 : 0),
                 ),
               ),
             ),
