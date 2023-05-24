@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../feature/apiService.dart';
 import '../feature/token.dart';
+import 'diary_page.dart';
 import 'search_list_page.dart'; // Please create this file
 
 class SearchPage extends StatefulWidget {
@@ -160,6 +161,19 @@ class _SearchPageState extends State<SearchPage> {
                         child: GestureDetector(
                           onTap: () {
                             print('Image clicked: ${searchResults[index]['id']}');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DiaryPage(
+                                  diaryId: searchResults[index]['id'],
+                                  accessToken: accessToken,
+                                ),
+                              ),
+                            ).then((result) {
+                              if (result != null && result) {
+                                _refreshPosts();
+                              }
+                            });
                           },
                           child: Image.network(searchResults[index]['image_url']),
                         ),

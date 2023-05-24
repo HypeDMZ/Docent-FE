@@ -16,7 +16,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.auto_stories), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.whatshot), label: ''),
+        // BottomNavigationBarItem(icon: Icon(Icons.whatshot), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
       ],
     );

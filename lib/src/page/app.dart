@@ -68,7 +68,6 @@ class _MainScreenState extends State<MainScreen> {
     MainPage(),
     SearchPage(),
     CreatePage(),
-    MyPage(), // HotPage(),
     MyPage(),
   ];
 
